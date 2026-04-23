@@ -196,6 +196,26 @@
     font-size: 12px;
     min-height: 28px;
   }
+  .kick-btn {
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    min-height: 24px;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--or-text-disabled);
+    background: transparent;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 2px;
+  }
+  .kick-btn:hover:not(:disabled) {
+    color: var(--or-error);
+    background: rgba(244, 124, 124, 0.12);
+  }
   .footer {
     margin-top: 20px;
     padding-top: 14px;
@@ -436,9 +456,16 @@ function render(state) {
   document.getElementById("reset-btn").addEventListener("click", handleReset);
 
   for (const p of activePlayers) {
-    const btn = document.getElementById(`ready-${p.id}`);
-    if (btn && p.id === selfId) {
-      btn.addEventListener("click", handleToggleReady);
+    const readyBtn = document.getElementById(`ready-${p.id}`);
+    if (readyBtn && p.id === selfId) {
+      readyBtn.addEventListener("click", handleToggleReady);
+    }
+    const kickBtn = document.getElementById(`kick-${p.id}`);
+    if (kickBtn) {
+      kickBtn.addEventListener("click", () => {
+        const confirmed = confirm(`Remove ${p.name} from combat?`);
+        if (confirmed) handleKick(p.id);
+      });
     }
   }
 }
@@ -448,6 +475,7 @@ function renderPlayerRow(player, phaseId) {
   const isSelf = player.id === selfId;
   const statusIcon = ready ? "✓" : "";
   const statusClass = ready ? "ready" : "waiting";
+  const canKick = selfRole === "GM" && !isSelf;
 
   return `
     <div class="player-row ${isSelf ? "self" : ""}">
@@ -460,6 +488,10 @@ function renderPlayerRow(player, phaseId) {
         ? `<button id="ready-${player.id}" class="self-ready-btn ${ready ? "outlined" : "contained"}">
             ${ready ? "Not ready" : "Ready"}
           </button>`
+        : ""
+      }
+      ${canKick
+        ? `<button id="kick-${player.id}" class="kick-btn" title="Remove from combat" aria-label="Remove ${escapeHtml(player.name)} from combat">×</button>`
         : ""
       }
     </div>
@@ -507,6 +539,16 @@ async function handleAdvance() {
         p.readyPhases = {};
       }
     }
+    return state;
+  });
+}
+
+async function handleKick(playerId) {
+  await updateState((state) => {
+    const player = state.players[playerId];
+    if (!player) return state;
+    player.joined = false;
+    player.readyPhases = {};
     return state;
   });
 }
