@@ -5,119 +5,141 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dolmenwood Combat Tracker</title>
 <style>
+  /* Theme tokens are set at runtime from OBR.theme.getTheme(). */
+  /* Fallbacks here match Owlbear's default dark palette so the UI */
+  /* looks right during the brief moment before the theme loads. */
   :root {
-    color-scheme: dark;
-    --bg: transparent;
-    --panel: rgba(255, 255, 255, 0.04);
-    --panel-border: rgba(255, 255, 255, 0.08);
-    --text: #e8e6e3;
-    --muted: #8a8680;
-    --accent: #c9a961;
-    --accent-dim: #6d5a33;
-    --ready: #6fa06f;
-    --waiting: #8a8680;
-    --danger: #a86a6a;
+    --or-bg: #222639;
+    --or-paper: #2c3044;
+    --or-paper-hover: #353a52;
+    --or-border: rgba(255, 255, 255, 0.12);
+    --or-text-primary: #ffffff;
+    --or-text-secondary: rgba(255, 255, 255, 0.7);
+    --or-text-disabled: rgba(255, 255, 255, 0.4);
+    --or-primary: #bb99ff;
+    --or-primary-contrast: #1a1625;
+    --or-secondary: #82c8a0;
+    --or-error: #f47c7c;
+    --or-success: #82c8a0;
   }
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    /* Owlbear uses Roboto via MUI; fall back to the system stack. */
+    font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 14px;
-    color: var(--text);
-    background: var(--bg);
+    color: var(--or-text-primary);
+    background: transparent;
+    -webkit-font-smoothing: antialiased;
   }
   body {
-    padding: 14px;
+    padding: 16px;
     min-height: 100vh;
   }
   .header {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--panel-border);
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--or-border);
   }
   .round {
-    font-size: 13px;
-    color: var(--muted);
+    font-size: 12px;
+    color: var(--or-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   .round strong {
-    color: var(--accent);
-    font-size: 16px;
+    color: var(--or-primary);
+    font-size: 18px;
+    font-weight: 500;
+    margin-left: 4px;
   }
   .phase-title {
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.15px;
   }
   .phase-prompt {
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 6px;
-    padding: 12px;
-    margin-bottom: 14px;
+    background: var(--or-paper);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 16px;
     line-height: 1.5;
     font-size: 13px;
-    color: var(--text);
+    color: var(--or-text-secondary);
   }
   .phase-prompt .phase-name {
-    color: var(--accent);
-    font-weight: 600;
+    color: var(--or-primary);
+    font-weight: 500;
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     font-size: 14px;
   }
   .join-row {
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 6px;
-    padding: 10px 12px;
-    margin-bottom: 12px;
+    background: var(--or-paper);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
   .join-row span {
-    font-size: 12px;
-    color: var(--muted);
+    font-size: 13px;
+    color: var(--or-text-secondary);
   }
+  /* MUI-ish button styling. */
   button {
     font-family: inherit;
     font-size: 13px;
-    border: 1px solid var(--panel-border);
-    background: var(--panel);
-    color: var(--text);
-    padding: 6px 12px;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    border: none;
+    background: transparent;
+    color: var(--or-primary);
+    padding: 6px 14px;
     border-radius: 4px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background-color 0.15s;
+    min-height: 32px;
   }
   button:hover:not(:disabled) {
-    border-color: var(--accent);
-    background: rgba(201, 169, 97, 0.08);
+    background: rgba(187, 153, 255, 0.08);
   }
   button:disabled {
-    opacity: 0.4;
+    color: var(--or-text-disabled);
     cursor: not-allowed;
   }
-  button.primary {
-    background: var(--accent-dim);
-    border-color: var(--accent);
-    color: var(--text);
+  button.contained {
+    background: var(--or-primary);
+    color: var(--or-primary-contrast);
+    padding: 8px 18px;
   }
-  button.primary:hover:not(:disabled) {
-    background: var(--accent);
-    color: #1a1612;
+  button.contained:hover:not(:disabled) {
+    background: var(--or-primary);
+    filter: brightness(1.1);
+  }
+  button.contained:disabled {
+    background: var(--or-paper);
+    color: var(--or-text-disabled);
+  }
+  button.outlined {
+    border: 1px solid var(--or-border);
+    background: transparent;
+  }
+  button.outlined:hover:not(:disabled) {
+    border-color: var(--or-primary);
+    background: rgba(187, 153, 255, 0.04);
   }
   button.danger {
-    border-color: rgba(168, 106, 106, 0.4);
-    color: var(--danger);
+    color: var(--or-error);
   }
   button.danger:hover:not(:disabled) {
-    background: rgba(168, 106, 106, 0.1);
-    border-color: var(--danger);
+    background: rgba(244, 124, 124, 0.08);
   }
   .players-section {
     margin-bottom: 14px;
@@ -126,76 +148,88 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--muted);
-    margin-bottom: 6px;
+    color: var(--or-text-secondary);
+    margin-bottom: 8px;
+    font-weight: 500;
   }
   .player-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: 4px;
-    margin-bottom: 4px;
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    background: var(--or-paper);
+    transition: background-color 0.15s;
   }
   .player-row.self {
-    border-color: var(--accent-dim);
+    background: var(--or-paper-hover);
   }
   .player-status {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 14px;
     flex-shrink: 0;
+    border-radius: 50%;
   }
-  .player-status.ready { color: var(--ready); }
-  .player-status.waiting { color: var(--waiting); }
+  .player-status.ready {
+    color: var(--or-primary-contrast);
+    background: var(--or-success);
+  }
+  .player-status.waiting {
+    color: var(--or-text-disabled);
+    border: 1.5px solid var(--or-text-disabled);
+    font-size: 10px;
+  }
   .player-name {
     flex: 1;
-    font-size: 13px;
+    font-size: 14px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   .player-name .you-tag {
-    color: var(--muted);
+    color: var(--or-text-secondary);
     font-size: 11px;
-    margin-left: 4px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   .self-ready-btn {
-    padding: 4px 10px;
+    padding: 4px 12px;
     font-size: 12px;
-  }
-  .advance-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 14px;
-  }
-  .advance-row button {
-    flex: 1;
-    padding: 10px;
+    min-height: 28px;
   }
   .footer {
     margin-top: 20px;
     padding-top: 14px;
-    border-top: 1px solid var(--panel-border);
+    border-top: 1px solid var(--or-border);
     display: flex;
     justify-content: flex-end;
   }
   .empty-state {
-    padding: 14px;
-    color: var(--muted);
-    font-size: 12px;
+    padding: 16px;
+    color: var(--or-text-secondary);
+    font-size: 13px;
     font-style: italic;
     text-align: center;
+    background: var(--or-paper);
+    border-radius: 6px;
   }
   .loading {
     padding: 40px;
     text-align: center;
-    color: var(--muted);
+    color: var(--or-text-secondary);
+  }
+  .status-hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--or-text-secondary);
+    margin-top: 10px;
+    font-style: italic;
   }
 </style>
 </head>
@@ -205,8 +239,6 @@
 <script type="module">
 import OBR from "https://esm.sh/@owlbear-rodeo/sdk@3";
 
-// Unique namespace for this extension's room metadata.
-// Reverse-domain convention prevents collisions with other extensions.
 const EXT_ID = "com.dolmenwood.combat-tracker";
 const METADATA_KEY = `${EXT_ID}/state`;
 
@@ -249,20 +281,51 @@ const PHASES = [
   },
 ];
 
-// Default state when a room is fresh or reset.
 function makeInitialState() {
   return {
     round: 1,
     phaseIndex: 0,
-    // Map of playerId -> { name, joined: bool, readyPhases: { phaseId: true } }
-    // We store readyPhases keyed by phase id so reset-to-phase-0 clears cleanly.
     players: {},
   };
 }
 
+// ---- Theme integration -----------------------------------------------------
+
+// Map Owlbear's theme object to our CSS custom properties.
+// The theme shape from OBR.theme.getTheme() follows MUI's palette structure:
+// { mode, background: {paper, default}, primary: {main, contrastText}, text: {primary, secondary, disabled}, ... }
+function applyTheme(theme) {
+  if (!theme) return;
+  const root = document.documentElement;
+  const p = theme.primary || {};
+  const s = theme.secondary || {};
+  const bg = theme.background || {};
+  const t = theme.text || {};
+
+  if (bg.default) root.style.setProperty("--or-bg", bg.default);
+  if (bg.paper) {
+    root.style.setProperty("--or-paper", bg.paper);
+    // Derive a hover shade by mixing paper toward text color slightly.
+    root.style.setProperty("--or-paper-hover", `color-mix(in srgb, ${bg.paper} 88%, ${t.primary || "#fff"})`);
+  }
+  if (p.main) root.style.setProperty("--or-primary", p.main);
+  if (p.contrastText) root.style.setProperty("--or-primary-contrast", p.contrastText);
+  if (s.main) root.style.setProperty("--or-secondary", s.main);
+  if (t.primary) root.style.setProperty("--or-text-primary", t.primary);
+  if (t.secondary) root.style.setProperty("--or-text-secondary", t.secondary);
+  if (t.disabled) root.style.setProperty("--or-text-disabled", t.disabled);
+  // Border alpha matches MUI convention (dark 0.12 over light, vice versa).
+  const borderRgba = theme.mode === "LIGHT"
+    ? "rgba(0, 0, 0, 0.12)"
+    : "rgba(255, 255, 255, 0.12)";
+  root.style.setProperty("--or-border", borderRgba);
+
+  // color-scheme ensures scrollbars and form controls match the theme mode.
+  root.style.setProperty("color-scheme", theme.mode === "LIGHT" ? "light" : "dark");
+}
+
 // ---- State helpers ---------------------------------------------------------
 
-// Read the current state from room metadata, falling back to defaults.
 async function readState() {
   const meta = await OBR.room.getMetadata();
   const existing = meta[METADATA_KEY];
@@ -272,26 +335,26 @@ async function readState() {
   return makeInitialState();
 }
 
-// Write state back to room metadata. All connected clients get the update.
 async function writeState(state) {
   await OBR.room.setMetadata({ [METADATA_KEY]: state });
 }
 
-// Atomic-ish update: read latest, apply mutator, write back.
-// Race conditions are possible in extreme cases but the state is small and
-// last-write-wins is acceptable here.
 async function updateState(mutator) {
   const current = await readState();
   const next = mutator(structuredClone(current));
   await writeState(next);
 }
 
-// ---- Rendering -------------------------------------------------------------
+// ---- Globals ---------------------------------------------------------------
 
 let selfId = null;
 let selfName = null;
-let selfRole = null; // "GM" or "PLAYER"
+let selfRole = null;
 let connectedPlayerIds = new Set();
+// Guards against the same client issuing an auto-advance twice for one phase.
+let lastAutoAdvancedAt = null; // `${round}:${phaseIndex}` string
+
+// ---- Rendering -------------------------------------------------------------
 
 function render(state) {
   const app = document.getElementById("app");
@@ -300,20 +363,41 @@ function render(state) {
   const phase = PHASES[state.phaseIndex];
   const self = state.players[selfId];
   const isJoined = !!self?.joined;
-  const isReady = !!self?.readyPhases?.[phase.id];
 
-  // Build list of players who are joined AND currently connected to the room.
   const activePlayers = Object.entries(state.players)
     .filter(([id, p]) => p.joined && connectedPlayerIds.has(id))
-    .map(([id, p]) => ({ id, ...p }));
+    .map(([id, p]) => ({ id, ...p }))
+    // Self first, then alphabetical — stable ordering across clients.
+    .sort((a, b) => {
+      if (a.id === selfId) return -1;
+      if (b.id === selfId) return 1;
+      return a.name.localeCompare(b.name);
+    });
 
   const allReady = activePlayers.length > 0 &&
     activePlayers.every((p) => p.readyPhases?.[phase.id]);
 
+  const readyCount = activePlayers.filter((p) => p.readyPhases?.[phase.id]).length;
+
+  // --- Auto-advance election -----------------------------------------------
+  // When everyone's ready, one client fires the advance. The elected client
+  // is the one with the lexicographically smallest ID among active joined
+  // players. This prevents races where multiple clients simultaneously try
+  // to advance and the round bumps by more than 1.
+  if (allReady && activePlayers.length > 0) {
+    const electedId = [...activePlayers.map(p => p.id)].sort()[0];
+    const phaseKey = `${state.round}:${state.phaseIndex}`;
+    if (electedId === selfId && lastAutoAdvancedAt !== phaseKey) {
+      lastAutoAdvancedAt = phaseKey;
+      // Fire-and-forget; the resulting metadata change triggers a re-render.
+      handleAdvance();
+    }
+  }
+
   app.innerHTML = `
     <div class="header">
       <div class="phase-title">${escapeHtml(phase.name)}</div>
-      <div class="round">Round <strong>${state.round}</strong></div>
+      <div class="round">Round<strong>${state.round}</strong></div>
     </div>
 
     <div class="phase-prompt">
@@ -323,22 +407,23 @@ function render(state) {
 
     <div class="join-row">
       <span>${isJoined ? "You are in the combat." : "You are not in the combat."}</span>
-      <button id="toggle-join">${isJoined ? "Leave" : "Join combat"}</button>
+      <button id="toggle-join" class="outlined">${isJoined ? "Leave" : "Join combat"}</button>
     </div>
 
     <div class="players-section">
-      <div class="section-label">Combatants (${activePlayers.length})</div>
+      <div class="section-label">Combatants — ${readyCount} of ${activePlayers.length} ready</div>
       ${activePlayers.length === 0
         ? `<div class="empty-state">No players have joined yet.</div>`
         : activePlayers.map((p) => renderPlayerRow(p, phase.id)).join("")
       }
-    </div>
-
-    <div class="advance-row">
-      <button id="advance-btn" class="primary" ${allReady ? "" : "disabled"}>
-        ${state.phaseIndex === PHASES.length - 1 ? "End Round" : "Next Phase"}
-        ${allReady ? "" : " (waiting)"}
-      </button>
+      ${activePlayers.length > 0
+        ? `<div class="status-hint">${
+            allReady
+              ? "Advancing to next phase…"
+              : "Phase advances automatically when everyone is ready."
+          }</div>`
+        : ""
+      }
     </div>
 
     <div class="footer">
@@ -346,12 +431,9 @@ function render(state) {
     </div>
   `;
 
-  // Wire up event handlers.
   document.getElementById("toggle-join").addEventListener("click", handleToggleJoin);
-  document.getElementById("advance-btn").addEventListener("click", handleAdvance);
   document.getElementById("reset-btn").addEventListener("click", handleReset);
 
-  // Each joined player gets their own ready button, but only enabled for self.
   for (const p of activePlayers) {
     const btn = document.getElementById(`ready-${p.id}`);
     if (btn && p.id === selfId) {
@@ -363,7 +445,7 @@ function render(state) {
 function renderPlayerRow(player, phaseId) {
   const ready = !!player.readyPhases?.[phaseId];
   const isSelf = player.id === selfId;
-  const statusIcon = ready ? "✓" : "○";
+  const statusIcon = ready ? "✓" : "";
   const statusClass = ready ? "ready" : "waiting";
 
   return `
@@ -371,10 +453,10 @@ function renderPlayerRow(player, phaseId) {
       <div class="player-status ${statusClass}">${statusIcon}</div>
       <div class="player-name">
         ${escapeHtml(player.name)}
-        ${isSelf ? '<span class="you-tag">(you)</span>' : ""}
+        ${isSelf ? '<span class="you-tag">you</span>' : ""}
       </div>
       ${isSelf
-        ? `<button id="ready-${player.id}" class="self-ready-btn ${ready ? "" : "primary"}">
+        ? `<button id="ready-${player.id}" class="self-ready-btn ${ready ? "outlined" : "contained"}">
             ${ready ? "Not ready" : "Ready"}
           </button>`
         : ""
@@ -389,7 +471,6 @@ async function handleToggleJoin() {
   await updateState((state) => {
     const existing = state.players[selfId];
     if (existing?.joined) {
-      // Leaving: unset joined but keep the record so reconnect is smooth.
       existing.joined = false;
       existing.readyPhases = {};
     } else {
@@ -419,8 +500,6 @@ async function handleAdvance() {
     if (state.phaseIndex < PHASES.length - 1) {
       state.phaseIndex += 1;
     } else {
-      // End of round: bump round counter, reset to Declarations,
-      // clear everyone's ready state.
       state.round += 1;
       state.phaseIndex = 0;
       for (const p of Object.values(state.players)) {
@@ -434,6 +513,7 @@ async function handleAdvance() {
 async function handleReset() {
   const confirmed = confirm("Reset combat to Round 1, Declarations phase? This clears all ready states.");
   if (!confirmed) return;
+  lastAutoAdvancedAt = null;
   await updateState((state) => {
     state.round = 1;
     state.phaseIndex = 0;
@@ -459,28 +539,33 @@ function escapeHtml(str) {
 // ---- Boot ------------------------------------------------------------------
 
 OBR.onReady(async () => {
-  // Identify self.
   selfId = await OBR.player.getId();
   selfName = await OBR.player.getName();
   selfRole = await OBR.player.getRole();
 
-  // Track connected players so we only show people who are actually in the room.
+  // Apply Owlbear's theme immediately, then subscribe to changes.
+  try {
+    const theme = await OBR.theme.getTheme();
+    applyTheme(theme);
+  } catch (e) {
+    // Non-fatal — fallback CSS values approximate Owlbear's dark theme.
+    console.warn("Could not fetch Owlbear theme:", e);
+  }
+  OBR.theme.onChange(applyTheme);
+
   const party = await OBR.party.getPlayers();
   connectedPlayerIds = new Set([selfId, ...party.map((p) => p.id)]);
 
-  // Re-render whenever the shared state changes.
-  OBR.room.onMetadataChange(async (metadata) => {
+  OBR.room.onMetadataChange((metadata) => {
     const state = metadata[METADATA_KEY] || makeInitialState();
     render(state);
   });
 
-  // Re-render when players join/leave the room.
   OBR.party.onChange((players) => {
     connectedPlayerIds = new Set([selfId, ...players.map((p) => p.id)]);
     readState().then(render);
   });
 
-  // Update name if self renames mid-session.
   OBR.player.onChange(async (player) => {
     if (player.name !== selfName) {
       selfName = player.name;
@@ -493,7 +578,6 @@ OBR.onReady(async () => {
     }
   });
 
-  // Initial render.
   const state = await readState();
   render(state);
 });
