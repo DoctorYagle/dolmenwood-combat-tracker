@@ -1,0 +1,14 @@
+{
+  "name": "Dolmenwood Combat Tracker",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "author": "You",
+  "description": "A phase-by-phase combat tracker following the Dolmenwood round sequence. Every player confirms ready before advancing.",
+  "action": {
+    "title": "Dolmenwood Combat",
+    "icon": "/icon.svg",
+    "popover": "/index.html",
+    "height": 600,
+    "width": 380
+  }
+}

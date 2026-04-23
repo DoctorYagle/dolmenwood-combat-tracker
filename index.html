@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dolmenwood Combat Tracker</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: transparent;
+    --panel: rgba(255, 255, 255, 0.04);
+    --panel-border: rgba(255, 255, 255, 0.08);
+    --text: #e8e6e3;
+    --muted: #8a8680;
+    --accent: #c9a961;
+    --accent-dim: #6d5a33;
+    --ready: #6fa06f;
+    --waiting: #8a8680;
+    --danger: #a86a6a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+  }
+  body {
+    padding: 14px;
+    min-height: 100vh;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .round {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .round strong {
+    color: var(--accent);
+    font-size: 16px;
+  }
+  .phase-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .phase-prompt {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 14px;
+    line-height: 1.5;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .phase-prompt .phase-name {
+    color: var(--accent);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+  .join-row {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .join-row span {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid var(--panel-border);
+    background: var(--panel);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  button:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(201, 169, 97, 0.08);
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  button.primary {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--text);
+  }
+  button.primary:hover:not(:disabled) {
+    background: var(--accent);
+    color: #1a1612;
+  }
+  button.danger {
+    border-color: rgba(168, 106, 106, 0.4);
+    color: var(--danger);
+  }
+  button.danger:hover:not(:disabled) {
+    background: rgba(168, 106, 106, 0.1);
+    border-color: var(--danger);
+  }
+  .players-section {
+    margin-bottom: 14px;
+  }
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+  }
+  .player-row.self {
+    border-color: var(--accent-dim);
+  }
+  .player-status {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .player-status.ready { color: var(--ready); }
+  .player-status.waiting { color: var(--waiting); }
+  .player-name {
+    flex: 1;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .player-name .you-tag {
+    color: var(--muted);
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  .self-ready-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  .advance-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .advance-row button {
+    flex: 1;
+    padding: 10px;
+  }
+  .footer {
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid var(--panel-border);
+    display: flex;
+    justify-content: flex-end;
+  }
+  .empty-state {
+    padding: 14px;
+    color: var(--muted);
+    font-size: 12px;
+    font-style: italic;
+    text-align: center;
+  }
+  .loading {
+    padding: 40px;
+    text-align: center;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div id="app" class="loading">Connecting to Owlbear Rodeo…</div>
+
+<script type="module">
+import OBR from "https://esm.sh/@owlbear-rodeo/sdk@3";
+
+// Unique namespace for this extension's room metadata.
+// Reverse-domain convention prevents collisions with other extensions.
+const EXT_ID = "com.dolmenwood.combat-tracker";
+const METADATA_KEY = `${EXT_ID}/state`;
+
+// Dolmenwood combat phase sequence.
+const PHASES = [
+  {
+    id: "declarations",
+    name: "Declarations",
+    prompt: "Each player must declare intent to cast a spell, use a fairy rune, or flee from melee. Other actions need not be declared. Press Ready when your declaration is made.",
+  },
+  {
+    id: "initiative",
+    name: "Initiative",
+    prompt: "One player rolls 1d6 for the party. The Referee rolls 1d6 for each other side. Highest acts first. Press Ready once the roll is made and initiative is known.",
+  },
+  {
+    id: "movement",
+    name: "Movement",
+    prompt: "Combatants on the acting side may move up to half Speed (full Speed if fleeing melee, forfeiting their attack). No movement while casting a spell. Press Ready once your movement is resolved.",
+  },
+  {
+    id: "missile",
+    name: "Missile Attacks",
+    prompt: "Ranged attacks — fired or thrown weapons. Possible when opponents are more than 5 feet apart. Press Ready once your ranged attack (or lack thereof) is resolved.",
+  },
+  {
+    id: "magic",
+    name: "Magic",
+    prompt: "Spells, fairy runes, glamours, magic items, and turning the undead are resolved now. Only combatants who declared a spell in the Declarations phase may cast. Press Ready when magic is resolved.",
+  },
+  {
+    id: "melee",
+    name: "Melee Attacks",
+    prompt: "Melee attacks and any other remaining actions. Possible when opponents are 5 feet or less apart. Press Ready when your melee (or other action) is resolved.",
+  },
+  {
+    id: "morale",
+    name: "Morale",
+    prompt: "The Referee makes a Morale check for monsters and NPCs, if applicable. Press Ready once the check has been rolled and its outcome applied.",
+  },
+];
+
+// Default state when a room is fresh or reset.
+function makeInitialState() {
+  return {
+    round: 1,
+    phaseIndex: 0,
+    // Map of playerId -> { name, joined: bool, readyPhases: { phaseId: true } }
+    // We store readyPhases keyed by phase id so reset-to-phase-0 clears cleanly.
+    players: {},
+  };
+}
+
+// ---- State helpers ---------------------------------------------------------
+
+// Read the current state from room metadata, falling back to defaults.
+async function readState() {
+  const meta = await OBR.room.getMetadata();
+  const existing = meta[METADATA_KEY];
+  if (existing && typeof existing === "object") {
+    return existing;
+  }
+  return makeInitialState();
+}
+
+// Write state back to room metadata. All connected clients get the update.
+async function writeState(state) {
+  await OBR.room.setMetadata({ [METADATA_KEY]: state });
+}
+
+// Atomic-ish update: read latest, apply mutator, write back.
+// Race conditions are possible in extreme cases but the state is small and
+// last-write-wins is acceptable here.
+async function updateState(mutator) {
+  const current = await readState();
+  const next = mutator(structuredClone(current));
+  await writeState(next);
+}
+
+// ---- Rendering -------------------------------------------------------------
+
+let selfId = null;
+let selfName = null;
+let selfRole = null; // "GM" or "PLAYER"
+let connectedPlayerIds = new Set();
+
+function render(state) {
+  const app = document.getElementById("app");
+  app.classList.remove("loading");
+
+  const phase = PHASES[state.phaseIndex];
+  const self = state.players[selfId];
+  const isJoined = !!self?.joined;
+  const isReady = !!self?.readyPhases?.[phase.id];
+
+  // Build list of players who are joined AND currently connected to the room.
+  const activePlayers = Object.entries(state.players)
+    .filter(([id, p]) => p.joined && connectedPlayerIds.has(id))
+    .map(([id, p]) => ({ id, ...p }));
+
+  const allReady = activePlayers.length > 0 &&
+    activePlayers.every((p) => p.readyPhases?.[phase.id]);
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="phase-title">${escapeHtml(phase.name)}</div>
+      <div class="round">Round <strong>${state.round}</strong></div>
+    </div>
+
+    <div class="phase-prompt">
+      <span class="phase-name">${escapeHtml(phase.name)}</span>
+      ${escapeHtml(phase.prompt)}
+    </div>
+
+    <div class="join-row">
+      <span>${isJoined ? "You are in the combat." : "You are not in the combat."}</span>
+      <button id="toggle-join">${isJoined ? "Leave" : "Join combat"}</button>
+    </div>
+
+    <div class="players-section">
+      <div class="section-label">Combatants (${activePlayers.length})</div>
+      ${activePlayers.length === 0
+        ? `<div class="empty-state">No players have joined yet.</div>`
+        : activePlayers.map((p) => renderPlayerRow(p, phase.id)).join("")
+      }
+    </div>
+
+    <div class="advance-row">
+      <button id="advance-btn" class="primary" ${allReady ? "" : "disabled"}>
+        ${state.phaseIndex === PHASES.length - 1 ? "End Round" : "Next Phase"}
+        ${allReady ? "" : " (waiting)"}
+      </button>
+    </div>
+
+    <div class="footer">
+      <button id="reset-btn" class="danger">Reset Combat</button>
+    </div>
+  `;
+
+  // Wire up event handlers.
+  document.getElementById("toggle-join").addEventListener("click", handleToggleJoin);
+  document.getElementById("advance-btn").addEventListener("click", handleAdvance);
+  document.getElementById("reset-btn").addEventListener("click", handleReset);
+
+  // Each joined player gets their own ready button, but only enabled for self.
+  for (const p of activePlayers) {
+    const btn = document.getElementById(`ready-${p.id}`);
+    if (btn && p.id === selfId) {
+      btn.addEventListener("click", handleToggleReady);
+    }
+  }
+}
+
+function renderPlayerRow(player, phaseId) {
+  const ready = !!player.readyPhases?.[phaseId];
+  const isSelf = player.id === selfId;
+  const statusIcon = ready ? "✓" : "○";
+  const statusClass = ready ? "ready" : "waiting";
+
+  return `
+    <div class="player-row ${isSelf ? "self" : ""}">
+      <div class="player-status ${statusClass}">${statusIcon}</div>
+      <div class="player-name">
+        ${escapeHtml(player.name)}
+        ${isSelf ? '<span class="you-tag">(you)</span>' : ""}
+      </div>
+      ${isSelf
+        ? `<button id="ready-${player.id}" class="self-ready-btn ${ready ? "" : "primary"}">
+            ${ready ? "Not ready" : "Ready"}
+          </button>`
+        : ""
+      }
+    </div>
+  `;
+}
+
+// ---- Event handlers --------------------------------------------------------
+
+async function handleToggleJoin() {
+  await updateState((state) => {
+    const existing = state.players[selfId];
+    if (existing?.joined) {
+      // Leaving: unset joined but keep the record so reconnect is smooth.
+      existing.joined = false;
+      existing.readyPhases = {};
+    } else {
+      state.players[selfId] = {
+        name: selfName,
+        joined: true,
+        readyPhases: {},
+      };
+    }
+    return state;
+  });
+}
+
+async function handleToggleReady() {
+  await updateState((state) => {
+    const phase = PHASES[state.phaseIndex];
+    const player = state.players[selfId];
+    if (!player || !player.joined) return state;
+    player.readyPhases = player.readyPhases || {};
+    player.readyPhases[phase.id] = !player.readyPhases[phase.id];
+    return state;
+  });
+}
+
+async function handleAdvance() {
+  await updateState((state) => {
+    if (state.phaseIndex < PHASES.length - 1) {
+      state.phaseIndex += 1;
+    } else {
+      // End of round: bump round counter, reset to Declarations,
+      // clear everyone's ready state.
+      state.round += 1;
+      state.phaseIndex = 0;
+      for (const p of Object.values(state.players)) {
+        p.readyPhases = {};
+      }
+    }
+    return state;
+  });
+}
+
+async function handleReset() {
+  const confirmed = confirm("Reset combat to Round 1, Declarations phase? This clears all ready states.");
+  if (!confirmed) return;
+  await updateState((state) => {
+    state.round = 1;
+    state.phaseIndex = 0;
+    for (const p of Object.values(state.players)) {
+      p.readyPhases = {};
+    }
+    return state;
+  });
+}
+
+// ---- Utilities -------------------------------------------------------------
+
+function escapeHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// ---- Boot ------------------------------------------------------------------
+
+OBR.onReady(async () => {
+  // Identify self.
+  selfId = await OBR.player.getId();
+  selfName = await OBR.player.getName();
+  selfRole = await OBR.player.getRole();
+
+  // Track connected players so we only show people who are actually in the room.
+  const party = await OBR.party.getPlayers();
+  connectedPlayerIds = new Set([selfId, ...party.map((p) => p.id)]);
+
+  // Re-render whenever the shared state changes.
+  OBR.room.onMetadataChange(async (metadata) => {
+    const state = metadata[METADATA_KEY] || makeInitialState();
+    render(state);
+  });
+
+  // Re-render when players join/leave the room.
+  OBR.party.onChange((players) => {
+    connectedPlayerIds = new Set([selfId, ...players.map((p) => p.id)]);
+    readState().then(render);
+  });
+
+  // Update name if self renames mid-session.
+  OBR.player.onChange(async (player) => {
+    if (player.name !== selfName) {
+      selfName = player.name;
+      await updateState((state) => {
+        if (state.players[selfId]) {
+          state.players[selfId].name = selfName;
+        }
+        return state;
+      });
+    }
+  });
+
+  // Initial render.
+  const state = await readState();
+  render(state);
+});
+</script>
+</body>
+</html>
