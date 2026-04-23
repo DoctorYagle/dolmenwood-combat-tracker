@@ -71,13 +71,6 @@
     font-size: 13px;
     color: var(--or-text-secondary);
   }
-  .phase-prompt .phase-name {
-    color: var(--or-primary);
-    font-weight: 500;
-    display: block;
-    margin-bottom: 6px;
-    font-size: 14px;
-  }
   .join-row {
     background: var(--or-paper);
     border-radius: 8px;
@@ -208,7 +201,9 @@
     padding-top: 14px;
     border-top: 1px solid var(--or-border);
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
   }
   .empty-state {
     padding: 16px;
@@ -401,14 +396,15 @@ function render(state) {
     </div>
 
     <div class="phase-prompt">
-      <span class="phase-name">${escapeHtml(phase.name)}</span>
       ${escapeHtml(phase.prompt)}
     </div>
 
-    <div class="join-row">
-      <span>${isJoined ? "You are in the combat." : "You are not in the combat."}</span>
-      <button id="toggle-join" class="outlined">${isJoined ? "Leave" : "Join combat"}</button>
-    </div>
+    ${!isJoined ? `
+      <div class="join-row">
+        <span>You are not in the combat.</span>
+        <button id="toggle-join" class="outlined">Join combat</button>
+      </div>
+    ` : ""}
 
     <div class="players-section">
       <div class="section-label">Combatants — ${readyCount} of ${activePlayers.length} ready</div>
@@ -427,11 +423,16 @@ function render(state) {
     </div>
 
     <div class="footer">
+      ${isJoined
+        ? `<button id="toggle-join" class="outlined">Leave combat</button>`
+        : `<span></span>`
+      }
       <button id="reset-btn" class="danger">Reset Combat</button>
     </div>
   `;
 
-  document.getElementById("toggle-join").addEventListener("click", handleToggleJoin);
+  const joinBtn = document.getElementById("toggle-join");
+  if (joinBtn) joinBtn.addEventListener("click", handleToggleJoin);
   document.getElementById("reset-btn").addEventListener("click", handleReset);
 
   for (const p of activePlayers) {
